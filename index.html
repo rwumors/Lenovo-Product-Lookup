@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Info Lookup</title>
+</head>
+<body>
+    <div style="text-align: center; padding: 20px;">
+        <h2>Product Lookup</h2>
+        <label for="serialNumber">Enter Serial Number:</label>
+        <input type="text" id="serialNumber" placeholder="Enter Serial Number" />
+        <button id="fetchInfoBtn">Get Product Info</button>
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        async function fetchProductInfo(serialNumber) {
+            const apiUrl = 'https://product-info-api-production.up.railway.app/api/product-info';
+            const resultDiv = document.getElementById('result');
+
+            // Clear previous results
+            resultDiv.innerHTML = '';
+
+            if (!serialNumber) {
+                resultDiv.innerHTML = '<p style="color: red;">Please enter a serial number.</p>';
+                return;
+            }
+
+            try {
+                // Make the API call
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ serialNumber }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    resultDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p><strong>Model:</strong> ${data.model}</p>
+                        <p><strong>Warranty End Date:</strong> ${data.warrantyEndDate}</p>
+                        <p><strong>Under Warranty:</strong> ${data.underWarranty ? 'Yes' : 'No'}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        document.getElementById('fetchInfoBtn').addEventListener('click', () => {
+            const serialNumber = document.getElementById('serialNumber').value.trim();
+            fetchProductInfo(serialNumber);
+        });
+    </script>
+</body>
+</html>
