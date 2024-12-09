@@ -1,11 +1,15 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Middleware to parse JSON requests
 app.use(express.json());
+
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Function to fetch product information for a given serial number
 async function fetchProductInfo(serialNumber) {
@@ -14,10 +18,7 @@ async function fetchProductInfo(serialNumber) {
     const body = { serialNumber };
 
     try {
-        console.log(`Fetching product info for serial number: ${serialNumber}`);
-        
         const response = await axios.post(url, body, { headers });
-
         const data = response.data;
 
         const machineInfo = data?.data?.machineInfo;
@@ -26,12 +27,9 @@ async function fetchProductInfo(serialNumber) {
             return { error: 'No machine information found for this serial number.' };
         }
 
-        // Extract relevant details
         const model = machineInfo.productName?.split('(')[0].trim() || 'Unknown';
         const warrantyDetails = data.data.currentWarranty;
         const warrantyEndDate = warrantyDetails?.endDate || null;
-
-        // Check if the product is under warranty
         const underWarranty = isUnderWarranty(warrantyEndDate);
 
         return {
@@ -49,30 +47,29 @@ async function fetchProductInfo(serialNumber) {
 // Function to determine if the product is under warranty
 function isUnderWarranty(warrantyEndDate) {
     if (!warrantyEndDate) {
-        return false; // No warranty information available
+        return false;
     }
-
     const currentDate = new Date();
     const endDate = new Date(warrantyEndDate);
-
-    return currentDate <= endDate; // True if the warranty end date is in the future
+    return currentDate <= endDate;
 }
 
 // API endpoint to fetch product information
 app.post('/api/product-info', async (req, res) => {
     const { serialNumber } = req.body;
-
     if (!serialNumber) {
         return res.status(400).json({ error: 'Serial number is required.' });
     }
-
     const productInfo = await fetchProductInfo(serialNumber);
-
     if (productInfo.error) {
         return res.status(500).json(productInfo);
     }
-
     res.json(productInfo);
+});
+
+// Serve the index.html for the root path
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start the server
