@@ -1,4 +1,4 @@
-# Product Info Lookup
+# Lenovo Product Lookup
 
 A simple Node.js + Express web application that allows users to look up Lenovo product information (model and warranty status) using a device serial number. The app consists of a backend API and a minimal frontend UI.
 
